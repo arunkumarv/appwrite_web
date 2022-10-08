@@ -1,28 +1,52 @@
-import _ from 'lodash';
-import './style.css';
-import SpidermanIcon from './spiderman-icon.png';
-import printMe from './print.js';
+import { Client, Account, ID, Databases } from "appwrite";
+import randomString from './utils.js';
+
+const apiEndPoint = 'http://localhost/v1';
+const projectID = '63387e4f8a27ee542f07';
+const databaseID = '633c5f822d4f71fe1ef0';
+const collectionID = '633c5f8deacd02cf5528';
+
+const client = new Client().setEndpoint(apiEndPoint).setProject(projectID);
+const account = new Account(client);
+const databases = new Databases(client);
 
 
-function component() {
-    const element = document.createElement('div');
+// Subscribe to files channel
+client.subscribe('files', response => {
+    if (response.events.includes('buckets.*.files.*.create')) {
+        // Log when a new file is uploaded
+        console.log(response.payload);
+    }
+});
+
+function create_button(text, callback) {
     const btn = document.createElement('button');
-
-    // Lodash, now imported by this script
-    element.innerHTML = _.join(['Hello', 'webpack'], ' ');
-    element.classList.add('hello');
-
-    const myIcon = new Image();
-    myIcon.src = SpidermanIcon;
-
-    element.appendChild(myIcon);
-
-    btn.innerHTML = 'Click me and check the console!';
-    btn.onclick = printMe;
-
-    element.appendChild(btn);
-
-    return element;
+    btn.style.margin = "10px";
+    btn.innerHTML = text;
+    btn.onclick = callback;
+    return btn;
 }
 
-document.body.appendChild(component());
+function executePromise(promise){
+    promise.then(function (response) {
+        console.log(response);
+    }, function (error) {
+        console.log(error);
+    });
+}
+
+
+document.body.appendChild(create_button('create random account', () => {
+    const promise = account.create(ID.unique(), `${randomString(4)}@${randomString(7)}.${randomString(3)}`, 'password', `${randomString(4)} ${randomString(4)}`)
+    executePromise(promise);
+}));
+
+document.body.appendChild(create_button('Create Account Session with Email', () => {
+    const promise = account.createEmailSession('me@example.com', 'password');
+    executePromise(promise);
+}));
+
+document.body.appendChild(create_button('print all docs', () => {
+   const promise = databases.listDocuments(databaseID, collectionID);
+   executePromise(promise);
+}))
